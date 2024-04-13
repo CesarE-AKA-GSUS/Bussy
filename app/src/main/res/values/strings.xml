@@ -4,4 +4,7 @@
 
     <string name="Ruta_223">Ruta 223</string>
     <string name="Nuevo_Marcador">Nuevo Marcador</string>
+    <string name="title_activity_splash_screen">SplashScreenActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
