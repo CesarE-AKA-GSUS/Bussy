@@ -1,12 +1,14 @@
 package com.example.bussy;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -31,6 +33,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
@@ -50,13 +53,13 @@ public class MainActivity extends AppCompatActivity
 
     //Editar AQUI
 
+
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean permissionDenied = false;
     EditText txtLatitud,txtLongitud;
     GoogleMap mMap;
     private Marker currentMarker;
     private Marker Tecnl;
-
 
 
 
@@ -132,17 +135,47 @@ public class MainActivity extends AppCompatActivity
 
     @SuppressLint("MissingPermission")
     private void enableMyLocation() {
-        // 1. Check if permissions are granted, if so, enable the my location layer
-        // 1. Check if permissions are granted, if so, enable the my location layer
+        // 1. verifica si se concedio permiso
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
+            // Cambiar el icono de la posición del usuario
+            if (mMap != null) {
+                try {
+                    // Obtiene el icono personalizado
+                    int height = 70;
+                    int width = 70;
+                    //R.drawable.n ES LA UBICACION DE LA IMAGEN
+                    @SuppressLint("UseCompatLoadingForDrawables")
+                    BitmapDrawable customIcon = (BitmapDrawable) getResources().getDrawable(R.drawable.iconolive);
+                    Bitmap b = customIcon.getBitmap();
+                    //SMALLMARKER ES EL NOMBRE DE LA VARIBALE DEL MARCADOR
+                    Bitmap smallcustomIcon = Bitmap.createScaledBitmap(b, width, height, false);
+
+
+
+                    // Crea un objeto LocationManager para obtener la última ubicación conocida
+                    LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    if (lastKnownLocation != null) {
+                        // Crea un marcador en la última ubicación conocida con el icono personalizado
+                        LatLng latLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                        mMap.addMarker(new MarkerOptions()
+                                .position(latLng)
+                                .icon(BitmapDescriptorFactory.fromBitmap(smallcustomIcon)));
+
+                    }
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+            }
+
             return;
         }
 
-        // 2. Otherwise, request location permissions from the user.
+        // en caso de que no
         PermissionUtils.requestLocationPermissions(this, LOCATION_PERMISSION_REQUEST_CODE, true);
     }
 
@@ -172,17 +205,32 @@ public class MainActivity extends AppCompatActivity
     @SuppressLint("SetTextI18n")
     @Override
     public void onMapClick(@NonNull LatLng latLng) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
 
-        if (currentMarker != null) {
-            currentMarker.remove(); // Eliminar el marcador actual si existe
+            mMap.setMyLocationEnabled(false);
+
+            if (currentMarker != null) {
+                currentMarker.remove(); // Eliminar el marcador actual si existe
+            }
+            currentMarker = mMap.addMarker(new MarkerOptions().position(latLng).title(getString(R.string.Nuevo_Marcador)));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         }
-        currentMarker = mMap.addMarker(new MarkerOptions().position(latLng).title(getString(R.string.Nuevo_Marcador)));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
     }
     @SuppressLint("SetTextI18n")
     @Override
     public void onMapLongClick(@NonNull LatLng latLng) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
 
+            mMap.setMyLocationEnabled(true);
+
+
+        }
     }
 
     @Override
@@ -238,4 +286,15 @@ public class MainActivity extends AppCompatActivity
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
 
+    private float calcularDistancia(LatLng posicion1, LatLng posicion2) {
+        Location location1 = new Location("");
+        location1.setLatitude(posicion1.latitude);
+        location1.setLongitude(posicion1.longitude);
+
+        Location location2 = new Location("");
+        location2.setLatitude(posicion2.latitude);
+        location2.setLongitude(posicion2.longitude);
+
+        return location1.distanceTo(location2);
+    }
 }
