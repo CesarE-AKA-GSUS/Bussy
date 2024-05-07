@@ -33,7 +33,7 @@ android {
 
 dependencies {
 
-
+    implementation 'com.google.maps.android:android-maps-utils:2.2.0'
     implementation libs.play.services.location
     implementation libs.appcompat
     implementation libs.material
@@ -41,7 +41,10 @@ dependencies {
     implementation libs.constraintlayout
     implementation libs.play.services.maps
     implementation libs.legacy.support.v4
+    implementation libs.volley
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+    implementation libs.core.splashscreen
+
 }

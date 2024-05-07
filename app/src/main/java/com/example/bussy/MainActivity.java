@@ -1,47 +1,49 @@
 package com.example.bussy;
 
+import android.Manifest;
+import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.SearchView;
-import android.widget.TextView;
 import android.widget.Toast;
-import android.Manifest;
-import android.Manifest.permission;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.PolyUtil;
 
-import java.security.Permission;
-import java.util.Objects;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity
@@ -49,7 +51,7 @@ public class MainActivity extends AppCompatActivity
         OnMapReadyCallback,
         GoogleMap.OnMapClickListener,
         GoogleMap.OnMapLongClickListener,
-        GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMyLocationClickListener, GoogleMap.OnMyLocationButtonClickListener {
+        GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMyLocationClickListener, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMarkerClickListener {
 
     //Editar AQUI
 
@@ -57,13 +59,20 @@ public class MainActivity extends AppCompatActivity
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean permissionDenied = false;
     EditText txtLatitud,txtLongitud;
+    ImageButton btnprueba;
     GoogleMap mMap;
-    private Marker currentMarker;
-    private Marker Tecnl;
+    private Marker currentMarker,marcador2;
+    private Marker Tecnl,Tecnl2;
+    private Handler handler;
+    private Runnable runnable;
+    private static final int DELAY = 1000;
 
 
 
+    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
+
+    Button buttonGenerateRoute;
 
 
     @Override
@@ -71,12 +80,32 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        btnprueba=findViewById(R.id.btncambio);
 
-//txtEditarTexto = findViewById(R.id.txtEditarTexto);
+
+
+
+        Button buttonGenerateRoute = findViewById(R.id.button_generate_route);
+        buttonGenerateRoute.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                generateRoute();
+            }
+        });
+
+
+
+        btnprueba.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Aquí defines la pantalla a la que quieres cambiar
+                Intent intent = new Intent(MainActivity.this, Informacion.class);
+                startActivity(intent);
+            }
+        });
+
+        //txtEditarTexto = findViewById(R.id.txtEditarTexto);
         SearchView BarraBusquedaMain = findViewById(R.id.BarraBusquedaMain);
-
-
-
 
 
         //ESTAS DOS LINEAS LLAMAN AL METODO "onMapReady"
@@ -98,6 +127,65 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+
+
+
+
+
+
+    public void generateRoute() {
+        if (mMap == null) {
+            Toast.makeText(this, "Mapa no listo todavía. Intenta de nuevo más tarde.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        DirectionsApiHelper directionsApiHelper = new DirectionsApiHelper(this);
+        directionsApiHelper.requestDirections("AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs");
+    }
+
+    public void displayRoute(JSONObject response) {
+        Log.d("DirectionsResponse", response.toString());
+        try {
+            JSONArray routes = response.getJSONArray("routes");
+            if (routes.length() > 0) {
+                JSONObject route = routes.getJSONObject(0);
+                JSONObject overviewPolyline = route.getJSONObject("overview_polyline");
+                String encodedPolyline = overviewPolyline.getString("points");
+
+                PolylineOptions polylineOptions = new PolylineOptions()
+                        .addAll(PolyUtil.decode(encodedPolyline))
+                        .width(5);
+
+                mMap.addPolyline(polylineOptions);
+
+                // Ajustar la cámara para mostrar toda la ruta
+                JSONObject bounds = route.getJSONObject("bounds");
+                JSONObject northeast = bounds.getJSONObject("northeast");
+                JSONObject southwest = bounds.getJSONObject("southwest");
+                LatLng northeastLatLng = new LatLng(northeast.getDouble("lat"), northeast.getDouble("lng"));
+                LatLng southwestLatLng = new LatLng(southwest.getDouble("lat"), southwest.getDouble("lng"));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(
+                        new LatLngBounds(southwestLatLng, northeastLatLng), 100));
+            } else {
+                Toast.makeText(this, "No se encontraron rutas.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (JSONException e) {
+            Toast.makeText(this, "Error al obtener la ruta.", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         //AJUSTA EL TAMAñO DEL MARCADOR
@@ -117,8 +205,13 @@ public class MainActivity extends AppCompatActivity
 
         //OBTIENE LAS CORDENADAS DONDE SE ABRIRA EL MAPA
         LatLng TecNL = new LatLng(25.664895, -100.245138);
+        LatLng TecNL2 = new LatLng(25.66470371562547, -100.24338602091686);
+
         //CREA UN MARCADOR
         Tecnl = mMap.addMarker(new MarkerOptions().position(TecNL).title(getString(R.string.Ruta_223)).icon(BitmapDescriptorFactory.fromBitmap(smallMarker))
+                .flat(true).snippet(getString(R.string.Click_aqui_para_mas_informacion)));
+        googleMap.setOnInfoWindowClickListener(this);
+        Tecnl2 = mMap.addMarker(new MarkerOptions().position(TecNL2).title(getString(R.string.Ruta_224)).icon(BitmapDescriptorFactory.fromBitmap(smallMarker))
                 .flat(true).snippet(getString(R.string.Click_aqui_para_mas_informacion)));
         googleMap.setOnInfoWindowClickListener(this);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(TecNL));
@@ -131,7 +224,34 @@ public class MainActivity extends AppCompatActivity
         mMap.setOnMyLocationClickListener(this);
         enableMyLocation();
 
+        mMap.setOnMarkerClickListener(this);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @SuppressLint("MissingPermission")
     private void enableMyLocation() {
@@ -147,26 +267,23 @@ public class MainActivity extends AppCompatActivity
                     // Obtiene el icono personalizado
                     int height = 70;
                     int width = 70;
-                    //R.drawable.n ES LA UBICACION DE LA IMAGEN
+                    // R.drawable.iconlive ES LA UBICACION DE LA IMAGEN
                     @SuppressLint("UseCompatLoadingForDrawables")
                     BitmapDrawable customIcon = (BitmapDrawable) getResources().getDrawable(R.drawable.iconolive);
                     Bitmap b = customIcon.getBitmap();
-                    //SMALLMARKER ES EL NOMBRE DE LA VARIBALE DEL MARCADOR
+                    // SMALLMARKER ES EL NOMBRE DE LA VARIABLE DEL MARCADOR
                     Bitmap smallcustomIcon = Bitmap.createScaledBitmap(b, width, height, false);
 
-
-
-                    // Crea un objeto LocationManager para obtener la última ubicación conocida
-                    LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                    Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if (lastKnownLocation != null) {
-                        // Crea un marcador en la última ubicación conocida con el icono personalizado
-                        LatLng latLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
-                        mMap.addMarker(new MarkerOptions()
-                                .position(latLng)
-                                .icon(BitmapDescriptorFactory.fromBitmap(smallcustomIcon)));
-
-                    }
+                    // Inicia la actualización periódica de la ubicación
+                    handler = new Handler();
+                    runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                                updateLastKnownLocation(smallcustomIcon);
+                                handler.postDelayed(this, DELAY);
+                        }
+                    };
+                    handler.postDelayed(runnable, DELAY);
                 } catch (SecurityException e) {
                     e.printStackTrace();
                 }
@@ -174,10 +291,63 @@ public class MainActivity extends AppCompatActivity
 
             return;
         }
-
-        // en caso de que no
-        PermissionUtils.requestLocationPermissions(this, LOCATION_PERMISSION_REQUEST_CODE, true);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void updateLastKnownLocation(Bitmap smallcustomIcon) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            // Crea un objeto LocationManager para obtener la última ubicación conocida
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (lastKnownLocation != null) {
+                // Si ya hay un marcador, elimínalo
+                if (marcador2 != null) {
+                    marcador2.remove();
+                }
+                // Crea un marcador en la última ubicación conocida con el icono personalizado
+                LatLng conocida = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
+                marcador2 = mMap.addMarker(new MarkerOptions()
+                        .position(conocida)
+                        .icon(BitmapDescriptorFactory.fromBitmap(smallcustomIcon)));
+            }
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
 
     public int Datos(){
         Random rand = new Random();
@@ -185,22 +355,56 @@ public class MainActivity extends AppCompatActivity
         return randomNumber;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @SuppressLint("SetTextI18n")
     public void onInfoWindowClick(Marker marker) {
-/*
-        switch (Objects.requireNonNull(marker.getTitle())){
-            case "Ruta 223":
-               txtEditarTexto.setText(Datos() + " Personas Approx");
-                break;
-            case "Ruta 214":
-               txtEditarTexto.setText(Datos() + " Personas Approx");
-                break;
+
+        if (marker.getTitle().equals(getString(R.string.Ruta_223))) {
+            Toast.makeText(this, "Info window clicked 223",
+                    Toast.LENGTH_SHORT).show();
         }
 
-        Toast.makeText(this, "Info window clicked",
-                Toast.LENGTH_SHORT).show();*/
-
+        if (marker.getTitle().equals(getString(R.string.Ruta_224))) {
+            Toast.makeText(this, "Info window clicked 224",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -219,6 +423,24 @@ public class MainActivity extends AppCompatActivity
             mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @SuppressLint("SetTextI18n")
     @Override
     public void onMapLongClick(@NonNull LatLng latLng) {
@@ -228,10 +450,22 @@ public class MainActivity extends AppCompatActivity
                 == PackageManager.PERMISSION_GRANTED) {
 
             mMap.setMyLocationEnabled(true);
-
-
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
@@ -267,8 +501,26 @@ public class MainActivity extends AppCompatActivity
             // Display the missing permission error dialog when the fragments resume.
             permissionDenied = true;
         }
-
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     protected void onResumeFragments() {
         super.onResumeFragments();
         if (permissionDenied) {
@@ -278,6 +530,22 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * Displays a dialog with error message explaining that the location permission is missing.
      */
@@ -285,6 +553,22 @@ public class MainActivity extends AppCompatActivity
         PermissionUtils.PermissionDeniedDialog
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private float calcularDistancia(LatLng posicion1, LatLng posicion2) {
         Location location1 = new Location("");
@@ -297,4 +581,32 @@ public class MainActivity extends AppCompatActivity
 
         return location1.distanceTo(location2);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Override
+    public boolean onMarkerClick(@NonNull Marker marker) {
+
+        // Devuelve false para permitir que el mapa maneje el clic en el marcador
+        return false;
+
+    }
+
+
+
 }
