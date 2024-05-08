@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="Personas">personas</string>
+    <string name="Asientos_disponibles">Asientos disponibles</string>
+    <string name="Capacidad_Total">Capacidad Total</string>
+    <string name="Hora_de_Llegada">Hora de Llegada</string>
+
+</resources>
