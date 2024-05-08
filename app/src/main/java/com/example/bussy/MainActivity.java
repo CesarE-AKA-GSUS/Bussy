@@ -169,6 +169,7 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
                         .addAll(PolyUtil.decode(encodedPolyline))
                         .width(5);
 
+
                 mMap.addPolyline(polylineOptions);
 
                 // Ajustar la cámara para mostrar toda la ruta
