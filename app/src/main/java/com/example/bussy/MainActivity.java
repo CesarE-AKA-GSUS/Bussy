@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity
 
     //Editar AQUI
 
-
+String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean permissionDenied = false;
     EditText txtLatitud,txtLongitud;
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity
         buttonGenerateRoute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                generateRoute();
+               generateRoute();
             }
         });
 
@@ -129,18 +129,31 @@ public class MainActivity extends AppCompatActivity
 
 
 
+    private String Lat,Long;
+    LatLng UbicacionReal;
+    public void onLocationChanged(Location location) {
+        // Aquí recibes las actualizaciones de ubicación en tiempo real
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+         UbicacionReal = new LatLng(location.getLatitude(),location.getLongitude());
+
+        Lat = String.valueOf(latitude);
+        Long = String.valueOf(longitude);
+    }
 
 
 
-
-    public void generateRoute() {
+    public  void generateRoute() {
         if (mMap == null) {
             Toast.makeText(this, "Mapa no listo todavía. Intenta de nuevo más tarde.", Toast.LENGTH_SHORT).show();
             return;
         }
+        String al = "25.664363, -100.216671";
+        String fl = "25.7161885, -100.3010873";
+
 
         DirectionsApiHelper directionsApiHelper = new DirectionsApiHelper(this);
-        directionsApiHelper.requestDirections("AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs");
+        directionsApiHelper.requestDirections(api,al,fl);
     }
 
     public void displayRoute(JSONObject response) {
@@ -274,7 +287,7 @@ public class MainActivity extends AppCompatActivity
                     // SMALLMARKER ES EL NOMBRE DE LA VARIABLE DEL MARCADOR
                     Bitmap smallcustomIcon = Bitmap.createScaledBitmap(b, width, height, false);
 
-                    // Inicia la actualización periódica de la ubicación
+                    // Inicia la actualización periódica de la ubicació
                     handler = new Handler();
                     runnable = new Runnable() {
                         @Override
