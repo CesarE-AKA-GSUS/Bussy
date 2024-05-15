@@ -12,6 +12,9 @@ playServicesLocation = "21.2.0"
 playServicesMaps = "18.2.0"
 legacySupportV4 = "1.0.0"
 volley = "1.2.1"
+fragment = "1.7.1"
+playServicesAds = "23.1.0"
+composePreviewRenderer = "0.0.1-alpha01"
 
 [libraries]
 core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
@@ -26,6 +29,9 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
 volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
+fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
+play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+compose-preview-renderer = { group = "com.android.tools.compose", name = "compose-preview-renderer", version.ref = "composePreviewRenderer" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

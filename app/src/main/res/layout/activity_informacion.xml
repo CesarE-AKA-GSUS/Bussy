@@ -7,43 +7,20 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/txtPersonas"
+        android:id="@+id/txtQuienesSomos"
         android:layout_width="188dp"
         android:layout_height="36dp"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="32dp"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="207dp"
+        android:layout_marginBottom="679dp"
         android:editable="false"
-        android:text="@string/Personas"
+        android:text="Quienes somos?"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
 
-    <TextView
-        android:id="@+id/txtvAsientos"
-        android:layout_width="188dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/Asientos_disponibles"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/txtPersonas" />
-
-    <TextView
-        android:id="@+id/txtvCapacidad"
-        android:layout_width="188dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/Capacidad_Total"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/txtvAsientos" />
-
-    <TextView
-        android:id="@+id/txtHoraLlegada"
-        android:layout_width="188dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/Hora_de_Llegada"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/txtvCapacidad" />
 </androidx.constraintlayout.widget.ConstraintLayout>

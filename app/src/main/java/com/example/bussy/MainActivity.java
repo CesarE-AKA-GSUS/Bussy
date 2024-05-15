@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -15,7 +17,6 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -23,11 +24,17 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -44,6 +51,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity
@@ -55,24 +64,36 @@ public class MainActivity extends AppCompatActivity
 
     //Editar AQUI
 
-String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
+
+    String api = "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean permissionDenied = false;
-    EditText txtLatitud,txtLongitud;
+
+    SearchView svBusqueda;
     ImageButton btnprueba;
     GoogleMap mMap;
-    private Marker currentMarker,marcador2;
-    private Marker Tecnl,Tecnl2;
+    private Marker currentMarker, marcador2;
+    private Marker Tecnl, Tecnl2;
     private Handler handler;
     private Runnable runnable;
     private static final int DELAY = 1000;
 
+    String texto11;
 
 
+    private FusedLocationProviderClient fusedLocationClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
+    String origen;
+    private LatLng destino;
 
-    Button buttonGenerateRoute;
+    String origenLat;
+    private LatLng direccionLatLng;
+
+    String origenAlt;
+    private String destinoString;
 
 
     @Override
@@ -80,32 +101,94 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        btnprueba=findViewById(R.id.btncambio);
+        btnprueba = findViewById(R.id.btncambio);
+        svBusqueda = findViewById(R.id.BarraBusquedaMain);
+
+
+        ////////////////////////API AUTO COMPLETADO
 
 
 
 
-        Button buttonGenerateRoute = findViewById(R.id.button_generate_route);
-        buttonGenerateRoute.setOnClickListener(new View.OnClickListener() {
+
+
+        //////////////////////////TERMINA API AUTO COMPLETADO
+
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(1000); // 5 segundos en milisegundos
+
+        locationCallback = new LocationCallback() {
             @Override
-            public void onClick(View v) {
-               generateRoute();
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                Location location = locationResult.getLastLocation();
+                // Aquí puedes utilizar la ubicación actual (location)
+                origenLat = String.valueOf(location.getLatitude());
+                origenAlt = String.valueOf(location.getLongitude());
+                origen = origenLat + " , " + origenAlt;
+
+            }
+        };
+// TODO:  ==============================AQUI INIICIA SEARCHVIEW METODOS ==============================
+
+
+        svBusqueda.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                // Convertir el texto a LatLng
+                destino = convertirDireccionALatLng(query);
+                if (destino != null) {
+                    // Convertir LatLng a String
+                     destinoString = destino.toString();
+                    Toast.makeText(MainActivity.this, "Destino: " + destinoString, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "No se pudo encontrar la ubicación.", Toast.LENGTH_SHORT).show();
+                }
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
             }
         });
 
+
+// TODO:  ==============================AQUI INIICIA SEARCHVIEW METODOS AUTOCOMPLETADO==============================
+
+
+// TODO: ==============================AQUI ACABA SEARCHVIEW METODOS==============================
+
+
+        Button buttonGenerateRoute = findViewById(R.id.button_generate_route);
+
+        buttonGenerateRoute.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                generateRoute();
+            }
+        });
 
 
         btnprueba.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Aquí defines la pantalla a la que quieres cambiar
+
                 Intent intent = new Intent(MainActivity.this, Informacion.class);
                 startActivity(intent);
+
             }
         });
 
+
+
         //txtEditarTexto = findViewById(R.id.txtEditarTexto);
-        SearchView BarraBusquedaMain = findViewById(R.id.BarraBusquedaMain);
+
 
 
         //ESTAS DOS LINEAS LLAMAN AL METODO "onMapReady"
@@ -113,10 +196,10 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         mapFragment.getMapAsync(this);
 
         //ESTO CONFIGURA LA BARRA DE BUESQUEDA MAIN
-        BarraBusquedaMain.setOnClickListener(new View.OnClickListener() {
+        svBusqueda.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                BarraBusquedaMain.setIconified(false); // Expandir el SearchView
+                svBusqueda.setIconified(false); // Expandir el SearchView
             }
         });
 
@@ -128,33 +211,48 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
+    /////////////SEARCHVIEW METODOS
+    private LatLng convertirDireccionALatLng(String direccion) {
+        Geocoder geocoder = new Geocoder(this);
+        try {
+            List<Address> addresses = geocoder.getFromLocationName(direccion, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                return new LatLng(address.getLatitude(), address.getLongitude());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-    private String Lat,Long;
+    ///////////FIN SEARCHVIEW METODOS
+
+
+    public void generateRoute() {
+        if (mMap == null) {
+            Toast.makeText(this, "Mapa no listo todavía. Intenta de nuevo más tarde.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        DirectionsApiHelper directionsApiHelper = new DirectionsApiHelper(this);
+        directionsApiHelper.requestDirections(api, origen,destinoString);
+    }
+
+    private String Lat, Long;
     LatLng UbicacionReal;
+
     public void onLocationChanged(Location location) {
         // Aquí recibes las actualizaciones de ubicación en tiempo real
         double latitude = location.getLatitude();
         double longitude = location.getLongitude();
-         UbicacionReal = new LatLng(location.getLatitude(),location.getLongitude());
+        UbicacionReal = new LatLng(location.getLatitude(), location.getLongitude());
 
         Lat = String.valueOf(latitude);
         Long = String.valueOf(longitude);
     }
 
-
-
-    public  void generateRoute() {
-        if (mMap == null) {
-            Toast.makeText(this, "Mapa no listo todavía. Intenta de nuevo más tarde.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        String al = "25.664363, -100.216671";
-        String fl = "25.7161885, -100.3010873";
-
-
-        DirectionsApiHelper directionsApiHelper = new DirectionsApiHelper(this);
-        directionsApiHelper.requestDirections(api,al,fl);
-    }
 
     public void displayRoute(JSONObject response) {
         Log.d("DirectionsResponse", response.toString());
@@ -190,16 +288,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
-
-
-
-
-
-
-
-
-
-
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         //AJUSTA EL TAMAñO DEL MARCADOR
@@ -213,7 +301,7 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
 
         //LLAMA A LAS CLASES ONMAPCLICK Y CONMAPLONG
-        mMap=googleMap;
+        mMap = googleMap;
         this.mMap.setOnMapClickListener(this);
         this.mMap.setOnMapLongClickListener(this);
 
@@ -236,35 +324,18 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         mMap = googleMap;
         mMap.setOnMyLocationButtonClickListener(this);
         mMap.setOnMyLocationClickListener(this);
-        enableMyLocation();
 
         mMap.setOnMarkerClickListener(this);
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                // Aquí puedes manejar la lógica para cambiar de ventana (actividad)
+               Intent intent = new Intent(MainActivity.this, MapaExtendido.class);
+              startActivity(intent);
+            }
+        });
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @SuppressLint("MissingPermission")
@@ -272,7 +343,7 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         // 1. verifica si se concedio permiso
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
             // Cambiar el icono de la posición del usuario
@@ -288,16 +359,16 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
                     // SMALLMARKER ES EL NOMBRE DE LA VARIABLE DEL MARCADOR
                     Bitmap smallcustomIcon = Bitmap.createScaledBitmap(b, width, height, false);
 
-                    // Inicia la actualización periódica de la ubicació
+                    // Inicia la actualización periódica de la ubicación
                     handler = new Handler();
                     runnable = new Runnable() {
                         @Override
                         public void run() {
-                                updateLastKnownLocation(smallcustomIcon);
-                                handler.postDelayed(this, DELAY);
+                            updateLastKnownLocation(smallcustomIcon);
+                            handler.postDelayed(this, 5000); // 5000 milisegundos = 5 segundos
                         }
                     };
-                    handler.postDelayed(runnable, DELAY);
+                    handler.postDelayed(runnable, 5000); // Inicia la actualización después de 5 segundos
                 } catch (SecurityException e) {
                     e.printStackTrace();
                 }
@@ -307,33 +378,10 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private void updateLastKnownLocation(Bitmap smallcustomIcon) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION)
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             // Crea un objeto LocationManager para obtener la última ubicación conocida
             LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -354,33 +402,11 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
-
-
-
-
-
-
-
-
-
-    public int Datos(){
+    public int Datos() {
         Random rand = new Random();
         int randomNumber = rand.nextInt(51); // Genera un número aleatorio del 0 al 50
         return randomNumber;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @SuppressLint("SetTextI18n")
@@ -396,28 +422,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
                     Toast.LENGTH_SHORT).show();
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @SuppressLint("SetTextI18n")
@@ -439,22 +443,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @SuppressLint("SetTextI18n")
     @Override
     public void onMapLongClick(@NonNull LatLng latLng) {
@@ -466,19 +454,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
             mMap.setMyLocationEnabled(true);
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @Override
@@ -518,23 +493,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     protected void onResumeFragments() {
         super.onResumeFragments();
         if (permissionDenied) {
@@ -545,21 +503,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * Displays a dialog with error message explaining that the location permission is missing.
      */
@@ -567,21 +510,6 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
         PermissionUtils.PermissionDeniedDialog
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     private float calcularDistancia(LatLng posicion1, LatLng posicion2) {
@@ -597,8 +525,35 @@ String api =  "AIzaSyA23EgCFfnT-Ag74lG__a3VsYUscHRe5bs";
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startLocationUpdates();
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopLocationUpdates();
+    }
 
+    private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+    }
+
+    private void stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback);
+    }
 
 
 

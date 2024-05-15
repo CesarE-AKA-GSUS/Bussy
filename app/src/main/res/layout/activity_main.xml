@@ -38,7 +38,7 @@
         android:id="@+id/materialToolbar"
         android:layout_width="412dp"
         android:layout_height="117dp"
-        android:background="#43F197"
+        android:background="#3311CB"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
         app:layout_constraintEnd_toEndOf="parent"
@@ -63,10 +63,28 @@
         android:id="@+id/BarraBusquedaMain"
         android:layout_width="244dp"
         android:layout_height="32dp"
+        android:layout_margin="16dp"
+        android:layout_marginTop="16dp"
         android:background="#878787"
+        android:iconifiedByDefault="false"
+        android:queryHint="Buscar calles"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.413"
         app:layout_constraintStart_toStartOf="@+id/materialToolbar"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <fragment
+        android:id="@+id/autocomplete_fragment"
+        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="411dp"
+        android:layout_marginBottom="731dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
         android:id="@+id/btncambio"
@@ -111,9 +129,9 @@
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/RutasCeranas"
-        android:layout_width="409dp"
-        android:layout_height="249dp"
-        android:background="?attr/colorPrimary"
+        android:layout_width="411dp"
+        android:layout_height="264dp"
+        android:background="#3311CB"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
         app:layout_constraintBottom_toTopOf="@+id/map"
@@ -123,14 +141,26 @@
 
     <Button
         android:id="@+id/button_generate_route"
+        android:layout_width="53dp"
+        android:layout_height="35dp"
+        android:text="Button"
+        app:layout_constraintBottom_toBottomOf="@+id/materialToolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.333"
+        app:layout_constraintStart_toEndOf="@+id/BarraBusquedaMain"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.683" />
+
+    <TextView
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="75dp"
-        android:layout_marginBottom="126dp"
-        android:text="Button"
-        app:layout_constraintBottom_toBottomOf="@+id/RutasCeranas"
-        app:layout_constraintEnd_toEndOf="@+id/RutasCeranas"
-        app:layout_constraintStart_toStartOf="parent"
+        android:text="No hay rutas cercas de ti 😔"
+        android:textColorLink="#F4F4F4"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/divider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/RutasCeranas"
         app:layout_constraintTop_toTopOf="@+id/RutasCeranas" />
 
 
